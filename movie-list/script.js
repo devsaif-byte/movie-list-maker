@@ -38,9 +38,42 @@ class Movie {
 	}
 
 	static deleteMovieCard(elem) {
-		console.log(elem);
 		elem.parentElement.parentElement.parentElement.remove();
 	}
+}
+
+class Store {
+	static getStored() {
+		let movies;
+		if (localStorage.getItem("movies") === null) {
+			movies = [];
+		} else {
+			movies = JSON.parse(localStorage.getItem("movies"));
+		}
+		return movies;
+	}
+
+	static addToStore(movie) {
+		let addMovies = Store.getStored();
+		addMovies.push(movie);
+		localStorage.setItem("movies", JSON.stringify(addMovies));
+	}
+
+	static removeFromStore(index) {
+		let movies = Store.getStored();
+		movies.splice(index, 1);
+		localStorage.setItem("movies", JSON.stringify(movies));
+	}
+}
+
+// Load and display stored movies
+function loadStoredMovies() {
+	const movies = Store.getStored();
+	movies.forEach((movie) => {
+		const { name, language, release, director } = movie;
+		const movieObj = new Movie(name, language, release, director);
+		movieObj.addMovieCard();
+	});
 }
 
 // Submit the form
@@ -54,14 +87,14 @@ btnSubmit.addEventListener("click", () => {
 	const releaseInput = document.querySelector("#floatingReleaseDate");
 	const directorInput = document.querySelector("#floatingDirector");
 
+	// Input validation
 	if (
-		nameInput.value === "" &&
-		languageInput.value === "" &&
-		releaseInput.value === "" &&
+		nameInput.value === "" ||
+		languageInput.value === "" ||
+		releaseInput.value === "" ||
 		directorInput.value === ""
 	) {
-		console.log(`Please Enter Something first..`);
-		msgDiv.innerHTML = `Please Enter Something first..`;
+		msgDiv.innerHTML = `Please Enter all data first..`;
 		card.appendChild(msgDiv);
 	} else {
 		const name = nameInput.value;
@@ -70,8 +103,11 @@ btnSubmit.addEventListener("click", () => {
 		const director = directorInput.value;
 
 		const movie = new Movie(name, language, release, director);
-		console.log(movie);
 		movie.addMovieCard();
+		// show from the local Storage
+		Store.getStored();
+		// add to localStorage
+		Store.addToStore(movie);
 
 		// Clear input fields
 		nameInput.value = "";
@@ -84,7 +120,16 @@ btnSubmit.addEventListener("click", () => {
 // Add event listener to delete button
 document.addEventListener("click", function (e) {
 	if (e.target.classList.contains("delete")) {
-		console.log(e.target.classList.contains("delete"));
+		// traverse through dom to select movie card from targeted element.
+		const movieCard = e.target.parentElement.parentElement.parentElement;
+		// creating index from an converted object to an array via Array.from static method.
+		const index = Array.from(movieCard.parentNode.children).indexOf(movieCard);
 		Movie.deleteMovieCard(e.target);
+		Store.removeFromStore(index);
 	}
+});
+
+// Load stored movies on page load
+window.addEventListener("DOMContentLoaded", () => {
+	loadStoredMovies();
 });
